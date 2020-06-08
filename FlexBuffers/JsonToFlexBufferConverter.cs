@@ -8,9 +8,7 @@ using System.Globalization;
 // Big thanks goes to Marcos Vladimir López Castellanos
 // https://github.com/MarcosLopezC
 namespace FlexBuffers
-{
-	
-	
+{	
     public class JsonToFlexBufferConverter
     {
 	    private readonly TextScanner _scanner;

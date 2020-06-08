@@ -43,12 +43,19 @@
     <Compile Include="CsvToFlexBufferConverter.cs" />
     <Compile Include="FlexBuffer.cs" />
     <Compile Include="FlexBufferBuilder.cs" />
+    <Compile Include="FlexBufferMapBuilder.cs" />
+    <Compile Include="FlexBufferVectorBuilder.cs" />
+    <Compile Include="FlxMap.cs" />
     <Compile Include="FlxValue.cs" />
+    <Compile Include="FlxVector.cs" />
+    <Compile Include="IFlexBufferMapBuilder.cs" />
+    <Compile Include="IFlexBufferVectorBuilder.cs" />
     <Compile Include="JsonToFlexBufferConverter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="StackValue.cs" />
     <Compile Include="TextScanner.cs" />
     <Compile Include="Types.cs" />
+    <Compile Include="TypesUtil.cs" />
     <Compile Include="XmlToFlexBufferConverter.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
