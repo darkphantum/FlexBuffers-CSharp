@@ -1,6 +1,4 @@
-FlexBuffers/bin
-FlexBuffers/obj
-FlexBuffersCSharpTests/bin
-FlexBuffersCSharpTests/obj
+**/bin
+**/obj
 packages
 /.vs
