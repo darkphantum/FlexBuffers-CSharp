@@ -53,7 +53,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\FlexBuffers\FlexBuffers.csproj">
-      <Project>{413de2e2-0412-4eee-ab96-bb4ef5eecae1}</Project>
+      <Project>{fe40e55a-be14-40b5-8a27-f14d701fc261}</Project>
       <Name>FlexBuffers</Name>
     </ProjectReference>
   </ItemGroup>
