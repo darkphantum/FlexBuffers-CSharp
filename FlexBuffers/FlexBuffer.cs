@@ -1,10 +1,28 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace FlexBuffers
 {
+    class ByteArrayComparer : EqualityComparer<byte[]>
+    {
+        public override bool Equals(byte[] x, byte[] y)
+        {
+            if (x == null && y == null) return true;
+            if (x == null || y == null) return false;
+            if (x.Length != y.Length) return false;
+
+            return x.SequenceEqual(y);
+        }
+
+        public override int GetHashCode(byte[] obj)
+        {
+            return obj.GetHashCode();
+        }
+    }
+
     public class FlexBuffer
     {
         [Flags]
@@ -17,7 +35,10 @@ namespace FlexBuffers
         } 
         private readonly List<StackValue> _stack = new List<StackValue>();
         private readonly Dictionary<string, int> _stringCache = new Dictionary<string, int>();
+
         private readonly Dictionary<string, int> _keyCache = new Dictionary<string, int>();
+        private readonly Dictionary<byte[], int> _keyBytesCache = new Dictionary<byte[], int>(new ByteArrayComparer());
+
         private readonly Dictionary<long[], StackValue> _keyVectorCache = new Dictionary<long[], StackValue>(new OffsetArrayComparer());
         private byte[] _bytes;
         private int _size = 2048;
@@ -552,6 +573,26 @@ namespace FlexBuffers
             if (_options.HasFlag(Options.ShareKeys))
             {
                 _keyCache[value] = keyOffset;
+            }
+        }
+
+        internal void AddKey(byte[] value)
+        {
+            if (_options.HasFlag(Options.ShareKeys) && _keyBytesCache.ContainsKey(value))
+            {
+                _stack.Add(StackValue.Value(_keyBytesCache[value], BitWidth.Width8, Type.Key));
+                return;
+            }
+
+            var length = value.Length;
+            var keyOffset = _offset;
+            var newOffset = NewOffset(length + 1);
+            Buffer.BlockCopy(value, 0, _bytes, _offset, length);
+            _offset = newOffset;
+            _stack.Add(StackValue.Value(keyOffset, BitWidth.Width8, Type.Key));
+            if (_options.HasFlag(Options.ShareKeys))
+            {
+                _keyBytesCache[value] = keyOffset;
             }
         }
 
