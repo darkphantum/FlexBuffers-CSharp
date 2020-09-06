@@ -52,6 +52,12 @@ namespace FlexBuffers
         {
             get
             {
+                if (_type == Type.Blob)
+                {
+                    var bytes = this.AsBlob;
+                    return long.Parse(Encoding.UTF8.GetString(bytes));
+                }
+
                 if (_type == Type.Int)
                 {
                     return ReadLong(_buffer, _offset, _parentWidth);    
@@ -125,6 +131,12 @@ namespace FlexBuffers
         {
             get
             {
+                if (_type == Type.Blob)
+                {
+                    var bytes = this.AsBlob;
+                    return double.Parse(Encoding.UTF8.GetString(bytes));
+                }
+
                 if (_type == Type.Float)
                 {
                     return ReadDouble(_buffer, _offset, _parentWidth);    
@@ -180,6 +192,12 @@ namespace FlexBuffers
         {
             get
             {
+                if (_type == Type.Blob)
+                {
+                    var bytes = this.AsBlob;
+                    return Encoding.UTF8.GetString(bytes);
+                }
+
                 if (_type == Type.String)
                 {
                     var indirectOffset = ComputeIndirectOffset(_buffer, _offset, _parentWidth);

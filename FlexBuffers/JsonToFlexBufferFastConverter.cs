@@ -257,7 +257,7 @@ namespace FlexBuffers
 			}
 			else
 			{
-				flx.Add(builder.ToString());
+				flx.Add(builder.ToArray());
 			}
 		}
 

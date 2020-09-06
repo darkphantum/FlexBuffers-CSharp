@@ -43,6 +43,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BitWidthTests.cs" />
+    <Compile Include="FastConverterTests.cs" />
     <Compile Include="FlexBufferBuilderTests.cs" />
     <Compile Include="FlexBufferTests.cs" />
     <Compile Include="FlxValueTests.cs" />
