@@ -124,28 +124,28 @@ namespace FlexBuffers
 			}
 		}
 
-		private void ReadDigits(StringBuilder builder)
+		private void ReadDigits(List<byte> builder)
 		{
 			while (_scanner.CanRead && char.IsDigit(_scanner.Peek()))
 			{
-				builder.Append(_scanner.Read());
+				builder.Add((byte)_scanner.Read());
 			}
 		}
 
 		private void ReadNumber(FlexBuffer flx)
 		{
-			var builder = new StringBuilder();
+			var builder = new List<byte>();
 
 			//var isFloat = false;
 
 			if (_scanner.Peek() == '-')
 			{
-				builder.Append(_scanner.Read());
+				builder.Add((byte) _scanner.Read());
 			}
 
 			if (_scanner.Peek() == '0')
 			{
-				builder.Append(_scanner.Read());
+				builder.Add((byte)_scanner.Read());
 			}
 			else
 			{
@@ -154,14 +154,14 @@ namespace FlexBuffers
 
 			if (_scanner.CanRead && _scanner.Peek() == '.')
 			{
-				builder.Append(_scanner.Read());
+				builder.Add((byte)_scanner.Read());
 				ReadDigits(builder);
 				//isFloat = true;
 			}
 
 			if (_scanner.CanRead && char.ToLowerInvariant(_scanner.Peek()) == 'e')
 			{
-				builder.Append(_scanner.Read());
+				builder.Add((byte)_scanner.Read());
 
 				var next = _scanner.Peek();
 
@@ -169,14 +169,14 @@ namespace FlexBuffers
 				{
 					case '+':
 					case '-':
-						builder.Append(_scanner.Read());
+						builder.Add((byte)_scanner.Read());
 						break;
 				}
 
 				ReadDigits(builder);
 			}
 
-			flx.Add(Encoding.UTF8.GetBytes(builder.ToString()));
+			flx.AddFlexBlob(builder.ToArray());
 			//if (isFloat)
 			//{
 			//	var value = double.Parse(
@@ -257,7 +257,7 @@ namespace FlexBuffers
 			}
 			else
 			{
-				flx.Add(builder.ToArray());
+				flx.AddFlexBlob(builder.ToArray());
 			}
 		}
 

@@ -52,7 +52,7 @@ namespace FlexBuffers
         {
             get
             {
-                if (_type == Type.Blob)
+                if (_type == Type.FlexBlob)
                 {
                     var bytes = this.AsBlob;
                     return long.Parse(Encoding.UTF8.GetString(bytes));
@@ -131,7 +131,7 @@ namespace FlexBuffers
         {
             get
             {
-                if (_type == Type.Blob)
+                if (_type == Type.FlexBlob)
                 {
                     var bytes = this.AsBlob;
                     return double.Parse(Encoding.UTF8.GetString(bytes));
@@ -192,7 +192,7 @@ namespace FlexBuffers
         {
             get
             {
-                if (_type == Type.Blob)
+                if (_type == Type.FlexBlob)
                 {
                     var bytes = this.AsBlob;
                     return Encoding.UTF8.GetString(bytes);
@@ -267,7 +267,7 @@ namespace FlexBuffers
         {
             get
             {
-                if (_type != Type.Blob)
+                if (_type != Type.Blob && _type != Type.FlexBlob)
                 {
                     throw new Exception($"Type {_type} is not a blob.");
                 }
