@@ -355,6 +355,20 @@ namespace FlexBuffers
             return Type.Blob;
         }
 
+        internal Type AddFlexStringBlob(byte[] value)
+        {
+            var bitWidth = BitWidthUtil.Width(value.Length);
+            var byteWidth = Align(bitWidth);
+            Write(value.Length, byteWidth);
+
+            var newOffset = NewOffset(value.Length);
+            var blobOffset = _offset;
+            Buffer.BlockCopy(value, 0, _bytes, _offset, value.Length);
+            _offset = newOffset;
+            _stack.Add(StackValue.Value(blobOffset, bitWidth, Type.FlexStringBlob));
+            return Type.FlexStringBlob;
+        }
+
         internal Type AddFlexBlob(byte[] value)
         {
             var bitWidth = BitWidthUtil.Width(value.Length);

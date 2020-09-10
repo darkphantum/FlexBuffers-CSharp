@@ -11,6 +11,7 @@ namespace FlexBuffers
         VectorInt3, VectorUInt3, VectorFloat3,
         VectorInt4, VectorUInt4, VectorFloat4,
         Blob, Bool, VectorBool = 36, 
-        FlexBlob = 50
+        FlexBlob = 50,
+        FlexStringBlob
     }
 }

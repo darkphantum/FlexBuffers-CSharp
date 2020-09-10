@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace FlexBuffers
 {
@@ -56,6 +58,26 @@ namespace FlexBuffers
             }
 
             return Values[keyIndex];
+        }
+
+        public async Task ConvertToJsonAsStreamAsync(Stream stream)
+        {
+            await stream.WriteAsync(new byte[] { (byte)'{' }, 0, 1);
+            var keys = Keys;
+            var values = Values;
+            for (var i = 0; i < _length; i++)
+            {
+                await keys[i].ConvertToJsonAsStreamAsync(stream);
+                await stream.WriteAsync(new byte[] { (byte)':' }, 0, 1);
+                await values[i].ConvertToJsonAsStreamAsync(stream);
+                if (i < _length - 1)
+                {
+                    await stream.WriteAsync(new byte[] { (byte)',' }, 0, 1);
+
+                }
+            }
+
+            await stream.WriteAsync(new byte[] { (byte)'}' }, 0, 1);
         }
 
         public string ToJson

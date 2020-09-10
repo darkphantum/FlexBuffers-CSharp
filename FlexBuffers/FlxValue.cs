@@ -1,6 +1,8 @@
 using System;
 using System.Globalization;
+using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace FlexBuffers
 {
@@ -54,7 +56,7 @@ namespace FlexBuffers
             {
                 if (_type == Type.FlexBlob)
                 {
-                    var bytes = this.AsBlob;
+                    var bytes = this.AsFlexBlob;
                     return long.Parse(Encoding.UTF8.GetString(bytes));
                 }
 
@@ -133,7 +135,7 @@ namespace FlexBuffers
             {
                 if (_type == Type.FlexBlob)
                 {
-                    var bytes = this.AsBlob;
+                    var bytes = this.AsFlexBlob;
                     return double.Parse(Encoding.UTF8.GetString(bytes));
                 }
 
@@ -192,9 +194,9 @@ namespace FlexBuffers
         {
             get
             {
-                if (_type == Type.FlexBlob)
+                if (_type == Type.FlexStringBlob)
                 {
-                    var bytes = this.AsBlob;
+                    var bytes = this.AsFlexBlob;
                     return Encoding.UTF8.GetString(bytes);
                 }
 
@@ -263,11 +265,44 @@ namespace FlexBuffers
             }
         }
 
+        public byte[] AsFlexBlob
+        {
+            get
+            {
+                if (_type == Type.Key)
+                {
+                    var indirectOffset = ComputeIndirectOffset(_buffer, _offset, _parentWidth);
+                    var size = 0;
+                    while (indirectOffset + size < _buffer.Length && _buffer[indirectOffset + size] != 0)
+                    {
+                        size++;
+                    }
+
+                    var blob = new byte[size];
+                    System.Buffer.BlockCopy(_buffer, indirectOffset, blob, 0, (int)size);
+
+                    return blob;
+                }
+
+                if (_type == Type.FlexBlob ||
+                    _type == Type.FlexStringBlob)
+                {
+                    var indirectOffset = ComputeIndirectOffset(_buffer, _offset, _parentWidth);
+                    var size = ReadLong(_buffer, indirectOffset - _byteWidth, _byteWidth);
+                    var blob = new byte[size];
+                    System.Buffer.BlockCopy(_buffer, indirectOffset, blob, 0, (int)size);
+                    return blob;                    
+                }
+
+                throw new Exception($"Type {_type} is not a flexblob.");
+            }
+        }
+
         public byte[] AsBlob
         {
             get
             {
-                if (_type != Type.Blob && _type != Type.FlexBlob)
+                if (_type != Type.Blob)
                 {
                     throw new Exception($"Type {_type} is not a blob.");
                 }
@@ -276,6 +311,49 @@ namespace FlexBuffers
                 var blob = new byte[size];
                 System.Buffer.BlockCopy(_buffer, indirectOffset, blob, 0, (int)size);
                 return blob;
+            }
+        }
+
+        public async Task ConvertToJsonAsStreamAsync(Stream stream)
+        {
+            if (TypesUtil.IsAVector(_type))
+            {
+                await AsVector.ConvertToJsonAsStreamAsync(stream);
+            }
+            else if (_type == Type.Map)
+            {
+                await AsMap.ConvertToJsonAsStreamAsync(stream);
+            }
+            else if (_type == Type.Blob)
+            {
+                var base64Bytes = Encoding.UTF8.GetBytes($"\"{Convert.ToBase64String(AsBlob)}\"");
+                await stream.WriteAsync(base64Bytes, 0, base64Bytes.Length);
+            }
+            else if (_type == Type.Bool)
+            {
+                var valueBytes = Encoding.UTF8.GetBytes(AsBool.ToString().ToLowerInvariant());
+                await stream.WriteAsync(valueBytes, 0, valueBytes.Length);
+            }
+            else if (_type == Type.Null)
+            {
+                var valueBytes = Encoding.UTF8.GetBytes("null");
+                await stream.WriteAsync(valueBytes, 0, valueBytes.Length);
+            }
+            else
+            {
+                var valueBytes = AsFlexBlob;
+                if (_type == Type.FlexStringBlob || _type == Type.Key)
+                {
+                    var quotedBytes = new byte[valueBytes.Length + 2];
+                    quotedBytes[0] = (byte)'"';
+                    quotedBytes[quotedBytes.Length - 1] = (byte)'"';
+                    System.Buffer.BlockCopy(valueBytes, 0, quotedBytes, 1, valueBytes.Length);
+                    await stream.WriteAsync(quotedBytes, 0, quotedBytes.Length);
+                }
+                else
+                {
+                    await stream.WriteAsync(valueBytes, 0, valueBytes.Length);
+                }
             }
         }
 

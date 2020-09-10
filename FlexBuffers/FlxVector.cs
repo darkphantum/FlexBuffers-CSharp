@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace FlexBuffers
 {
@@ -53,6 +55,21 @@ namespace FlexBuffers
                 }
                 throw new Exception($"Bad index {index}, should be 0...{_length}");
             }
+        }
+
+        public async Task ConvertToJsonAsStreamAsync(Stream stream)
+        {
+            await stream.WriteAsync(new byte[] { (byte)'[' }, 0, 1);
+            for (var i = 0; i < _length; i++)
+            {
+                await this[i].ConvertToJsonAsStreamAsync(stream);
+                if (i < _length - 1)
+                {
+                    await stream.WriteAsync(new byte[] { (byte)',' }, 0, 1);
+                }
+            }
+
+            await stream.WriteAsync(new byte[] { (byte)']' }, 0, 1);
         }
 
         public string ToJson

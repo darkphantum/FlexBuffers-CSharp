@@ -1,5 +1,7 @@
 ﻿using FlexBuffers;
 using NUnit.Framework;
+using System.IO;
+using System.Text;
 
 namespace FlexBuffersCSharpTests
 {
@@ -43,6 +45,12 @@ namespace FlexBuffersCSharpTests
             Assert.AreEqual("Bla", flx["address"]["city"].AsString);
             Assert.AreEqual("12345", flx["address"]["zip"].AsString);
             Assert.AreEqual("XX", flx["address"]["countryCode"].AsString);
+
+            MemoryStream stream = new MemoryStream();
+            flx.ConvertToJsonAsStreamAsync(stream).Wait();
+            var outbytes = stream.ToArray();
+            var j = Encoding.UTF8.GetString(outbytes);
+            Assert.IsNotNull(j);
         }
     }
 }
