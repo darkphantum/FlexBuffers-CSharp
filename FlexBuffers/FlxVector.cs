@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace FlexBuffers
 {
-    public struct FlxVector : IEnumerable<FlxValue>
+    public class FlxVector : IEnumerable<FlxValue>
     {
         private readonly byte[] _buffer;
         private readonly int _offset;

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace FlexBuffers
 {
-    public struct FlxMap : IEnumerable<KeyValuePair<string, FlxValue>>
+    public class FlxMap : IEnumerable<KeyValuePair<string, FlxValue>>
     {
         private readonly byte[] _buffer;
         private readonly int _offset;

@@ -31,6 +31,7 @@ namespace FlexBuffersCSharpTests
             Assert.AreEqual(6, flx.AsMap.Length);
 
             Assert.AreEqual(35, flx["age"].AsLong);
+            Assert.AreEqual(35, flx["age"].AsLong);
             Assert.AreEqual(72.5, flx["weight"].AsDouble);
             Assert.AreEqual("Maxim", flx["name"].AsString);
             Assert.AreEqual(true, flx["something"].IsNull);

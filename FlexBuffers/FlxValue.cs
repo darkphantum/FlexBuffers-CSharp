@@ -6,13 +6,36 @@ using System.Threading.Tasks;
 
 namespace FlexBuffers
 {
-    public struct FlxValue
+    enum CachedType
+    {
+        None,
+        Long,
+        ULong,
+        Double,
+        String,
+        Bool,
+        Vector,
+        Map
+    }
+
+    public class FlxValue
     {
         private readonly byte[] _buffer;
         private readonly int _offset;
         private readonly byte _parentWidth;
         private readonly byte _byteWidth;
         private readonly Type _type;
+
+        // dont deal with unboxing
+        private long _cachedLong;
+        private ulong _cachedULong;
+        private string _cachedString;
+        private double _cachedDouble;
+        private bool _cachedBool;
+        private FlxMap _cachedMap;
+        private FlxVector _cachedVector;
+
+        private CachedType _cachedType = CachedType.None;
 
         internal FlxValue(byte[] buffer, int offset, byte parentWidth, byte packedType)
         {
@@ -54,41 +77,59 @@ namespace FlexBuffers
         {
             get
             {
+                if (_cachedType == CachedType.Long)
+                {
+                    return _cachedLong;
+                }
+
+                long val;
                 if (_type == Type.FlexBlob)
                 {
                     var bytes = this.AsFlexBlob;
-                    return long.Parse(Encoding.UTF8.GetString(bytes));
+                    val = long.Parse(Encoding.UTF8.GetString(bytes));
                 }
-
-                if (_type == Type.Int)
+                else if (_type == Type.Int)
                 {
-                    return ReadLong(_buffer, _offset, _parentWidth);    
+                    val = ReadLong(_buffer, _offset, _parentWidth);
                 }
-
-                if (_type == Type.IndirectInt)
+                else if (_type == Type.IndirectInt)
                 {
                     var indirectOffset = ComputeIndirectOffset(_buffer, _offset, _parentWidth);
-                    return ReadLong(_buffer, indirectOffset, _byteWidth);
+                    val = ReadLong(_buffer, indirectOffset, _byteWidth);
                 }
-
-                if (_type == Type.Uint)
+                else if (_type == Type.Uint)
                 {
                     var value = ReadULong(_buffer, _offset, _parentWidth);
                     if (value <= long.MaxValue)
                     {
-                        return (long) value;
+                        val = (long)value;
+                    }
+                    else
+                    {
+                        throw new Exception($"Type {_type} is not convertible to long");
                     }
                 }
-                if (_type == Type.IndirectUInt)
+                else if (_type == Type.IndirectUInt)
                 {
                     var indirectOffset = ComputeIndirectOffset(_buffer, _offset, _parentWidth);
                     var value = ReadULong(_buffer, indirectOffset, _byteWidth);
                     if (value <= long.MaxValue)
                     {
-                        return (long) value;
+                        val = (long)value;
+                    }
+                    else
+                    {
+                        throw new Exception($"Type {_type} is not convertible to long");
                     }
                 }
-                throw new Exception($"Type {_type} is not convertible to long");
+                else
+                {
+                    throw new Exception($"Type {_type} is not convertible to long");
+                }
+
+                _cachedType = CachedType.Long;
+                _cachedLong = val;
+                return val;
             }
         }
         
@@ -96,42 +137,59 @@ namespace FlexBuffers
         {
             get
             {
+                if (_cachedType == CachedType.ULong)
+                {
+                    return _cachedULong;
+                }
+
+                ulong val;
                 if (_type == Type.FlexBlob)
                 {
                     var bytes = this.AsFlexBlob;
-                    return ulong.Parse(Encoding.UTF8.GetString(bytes));
+                    val = ulong.Parse(Encoding.UTF8.GetString(bytes));
                 }
-
-                if (_type == Type.Uint)
+                else if (_type == Type.Uint)
                 {
-                    return ReadULong(_buffer, _offset, _parentWidth);    
+                    val = ReadULong(_buffer, _offset, _parentWidth);
                 }
-                
-                if (_type == Type.IndirectUInt)
+                else if (_type == Type.IndirectUInt)
                 {
                     var indirectOffset = ComputeIndirectOffset(_buffer, _offset, _parentWidth);
-                    return ReadULong(_buffer, indirectOffset, _byteWidth);
+                    val = ReadULong(_buffer, indirectOffset, _byteWidth);
                 }
-
-                if (_type == Type.Int)
+                else if (_type == Type.Int)
                 {
                     var value = ReadLong(_buffer, _offset, _parentWidth);
                     if (value >= 0)
                     {
-                        return (ulong) value;
+                        val = (ulong)value;
+                    }
+                    else
+                    {
+                        throw new Exception($"Type {_type} is not convertible to ulong");
                     }
                 }
-                
-                if (_type == Type.IndirectInt)
+                else if (_type == Type.IndirectInt)
                 {
                     var indirectOffset = ComputeIndirectOffset(_buffer, _offset, _parentWidth);
                     var value = ReadLong(_buffer, indirectOffset, _byteWidth);
                     if (value >= 0)
                     {
-                        return (ulong) value;
+                        val = (ulong)value;
+                    }
+                    else
+                    {
+                        throw new Exception($"Type {_type} is not convertible to ulong");
                     }
                 }
-                throw new Exception($"Type {_type} is not convertible to ulong");
+                else
+                {
+                    throw new Exception($"Type {_type} is not convertible to ulong");
+                }
+
+                _cachedULong = val;
+                _cachedType = CachedType.ULong;
+                return val;
             }
         }
         
@@ -139,40 +197,52 @@ namespace FlexBuffers
         {
             get
             {
+                if (_cachedType == CachedType.Double)
+                {
+                    return _cachedDouble;
+                }
+
+                double val;
                 if (_type == Type.FlexBlob)
                 {
                     var bytes = this.AsFlexBlob;
-                    return double.Parse(Encoding.UTF8.GetString(bytes));
+                    val = double.Parse(Encoding.UTF8.GetString(bytes));
+                }
+                else if (_type == Type.Float)
+                {
+                    val = ReadDouble(_buffer, _offset, _parentWidth);
+                }
+                else if (_type == Type.Int)
+                {
+                    val = ReadLong(_buffer, _offset, _parentWidth);
+                }
+                else if (_type == Type.Uint)
+                {
+                    val = ReadULong(_buffer, _offset, _parentWidth);
+                }
+                else if (_type == Type.IndirectFloat)
+                {
+                    var indirectOffset = ComputeIndirectOffset(_buffer, _offset, _parentWidth);
+                    val = ReadDouble(_buffer, indirectOffset, _byteWidth);
+                }
+                else if (_type == Type.IndirectUInt)
+                {
+                    var indirectOffset = ComputeIndirectOffset(_buffer, _offset, _parentWidth);
+                    val = ReadULong(_buffer, indirectOffset, _byteWidth);
+                }
+                else if (_type == Type.IndirectInt)
+                {
+                    var indirectOffset = ComputeIndirectOffset(_buffer, _offset, _parentWidth);
+                    val = ReadLong(_buffer, indirectOffset, _byteWidth);
+                }
+                else
+                {
+                    throw new Exception($"Type {_type} is not convertible to double");
                 }
 
-                if (_type == Type.Float)
-                {
-                    return ReadDouble(_buffer, _offset, _parentWidth);    
-                }
-                if (_type == Type.Int)
-                {
-                    return ReadLong(_buffer, _offset, _parentWidth);    
-                }
-                if (_type == Type.Uint)
-                {
-                    return ReadULong(_buffer, _offset, _parentWidth);    
-                }
-                if (_type == Type.IndirectFloat)
-                {
-                    var indirectOffset = ComputeIndirectOffset(_buffer, _offset, _parentWidth);
-                    return ReadDouble(_buffer, indirectOffset, _byteWidth);
-                }
-                if (_type == Type.IndirectUInt)
-                {
-                    var indirectOffset = ComputeIndirectOffset(_buffer, _offset, _parentWidth);
-                    return ReadULong(_buffer, indirectOffset, _byteWidth);
-                }
-                if (_type == Type.IndirectInt)
-                {
-                    var indirectOffset = ComputeIndirectOffset(_buffer, _offset, _parentWidth);
-                    return ReadLong(_buffer, indirectOffset, _byteWidth);
-                }
-                throw new Exception($"Type {_type} is not convertible to double");
+                _cachedType = CachedType.Double;
+                _cachedDouble = val;
+                return val;
             }
         }
         
@@ -180,19 +250,32 @@ namespace FlexBuffers
         {
             get
             {
+                if (_cachedType == CachedType.Bool)
+                {
+                    return _cachedBool;
+                }
+
+                bool val;
                 if (_type == Type.Bool)
                 {
-                    return _buffer[_offset] != 0;
+                    val = _buffer[_offset] != 0;
                 }
-                if (_type == Type.Int)
+                else if (_type == Type.Int)
                 {
-                    return ReadLong(_buffer, _offset, _parentWidth) != 0;    
+                    val = ReadLong(_buffer, _offset, _parentWidth) != 0;
                 }
-                if (_type == Type.Uint)
+                else if (_type == Type.Uint)
                 {
-                    return ReadULong(_buffer, _offset, _parentWidth) != 0;    
+                    val = ReadULong(_buffer, _offset, _parentWidth) != 0;
                 }
-                throw new Exception($"Type {_type} is not convertible to bool");
+                else
+                {
+                    throw new Exception($"Type {_type} is not convertible to bool");
+                }
+
+                _cachedBool = val;
+                _cachedType = CachedType.Bool;
+                return val;
             }
         }
         
@@ -200,13 +283,19 @@ namespace FlexBuffers
         {
             get
             {
+                if (_cachedType == CachedType.String)
+                {
+                    return _cachedString;
+                }
+
+
+                string val;
                 if (_type == Type.FlexStringBlob)
                 {
                     var bytes = this.AsFlexBlob;
-                    return Encoding.UTF8.GetString(bytes);
+                    val = Encoding.UTF8.GetString(bytes);
                 }
-
-                if (_type == Type.String)
+                else if (_type == Type.String)
                 {
                     var indirectOffset = ComputeIndirectOffset(_buffer, _offset, _parentWidth);
                     var size = (int)ReadLong(_buffer, indirectOffset - _byteWidth, _byteWidth);
@@ -216,11 +305,10 @@ namespace FlexBuffers
                         sizeWidth <<= 1;
                         size = (int)ReadLong(_buffer, indirectOffset - sizeWidth, (byte)sizeWidth);
                     }
-                    
-                    return Encoding.UTF8.GetString(_buffer, indirectOffset, size);
-                }
 
-                if (_type == Type.Key)
+                    val = Encoding.UTF8.GetString(_buffer, indirectOffset, size);
+                }
+                else if (_type == Type.Key)
                 {
                     var indirectOffset = ComputeIndirectOffset(_buffer, _offset, _parentWidth);
                     var size = 0;
@@ -228,10 +316,16 @@ namespace FlexBuffers
                     {
                         size++;
                     }
-                    return Encoding.UTF8.GetString(_buffer, indirectOffset, size);
+                    val = Encoding.UTF8.GetString(_buffer, indirectOffset, size);
                 }
-                
-                throw new Exception($"Type {_type} is not convertible to string");
+                else
+                {
+                    throw new Exception($"Type {_type} is not convertible to string");
+                }
+
+                _cachedString = val;
+                _cachedType = CachedType.String;
+                return val;
             }
         }
         
@@ -248,11 +342,18 @@ namespace FlexBuffers
                     throw new Exception($"Type {_type} is not a vector.");
                 }
 
+                if (_cachedType == CachedType.Vector)
+                {
+                    return _cachedVector;
+                }
+
                 var indirectOffset = ComputeIndirectOffset(_buffer, _offset, _parentWidth);
                 var size = TypesUtil.IsFixedTypedVector(_type) 
                     ? TypesUtil.FixedTypedVectorElementSize(_type) 
                     : (int)ReadLong(_buffer, indirectOffset - _byteWidth, _byteWidth);
-                return new FlxVector(_buffer, indirectOffset, _byteWidth, _type, size);
+                _cachedVector = new FlxVector(_buffer, indirectOffset, _byteWidth, _type, size);
+                _cachedType = CachedType.Vector;
+                return _cachedVector;
             }
         }
 
@@ -265,9 +366,16 @@ namespace FlexBuffers
                     throw new Exception($"Type {_type} is not a map.");
                 }
 
+                if (_cachedType == CachedType.Map)
+                {
+                    return _cachedMap;
+                }
+
                 var indirectOffset = ComputeIndirectOffset(_buffer, _offset, _parentWidth);
                 var size = ReadLong(_buffer, indirectOffset - _byteWidth, _byteWidth);
-                return new FlxMap(_buffer, indirectOffset, _byteWidth, (int)size);
+                _cachedMap = new FlxMap(_buffer, indirectOffset, _byteWidth, (int)size);
+                _cachedType = CachedType.Map;
+                return _cachedMap;
             }
         }
 
