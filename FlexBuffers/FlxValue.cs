@@ -96,6 +96,12 @@ namespace FlexBuffers
         {
             get
             {
+                if (_type == Type.FlexBlob)
+                {
+                    var bytes = this.AsFlexBlob;
+                    return ulong.Parse(Encoding.UTF8.GetString(bytes));
+                }
+
                 if (_type == Type.Uint)
                 {
                     return ReadULong(_buffer, _offset, _parentWidth);    
