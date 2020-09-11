@@ -13,6 +13,9 @@ namespace FlexBuffers
         private readonly int _offset;
         private readonly int _length;
         private readonly byte _byteWidth;
+        private FlxVector _cachedKeys;
+        private FlxVector _cachedValues;
+        private Dictionary<string, FlxValue> _cache = new Dictionary<string, FlxValue>();
 
         internal FlxMap(byte[] buffer, int offset, byte byteWidth, int length)
         {
@@ -28,25 +31,48 @@ namespace FlexBuffers
         {
             get
             {
-                var keysOffset = _offset - _byteWidth * 3;
-                var indirectOffset = FlxValue.ComputeIndirectOffset(_buffer, keysOffset, _byteWidth);
-                var bWidth = FlxValue.ReadLong(_buffer, keysOffset + _byteWidth, _byteWidth);
-                return new FlxVector(_buffer, indirectOffset, (byte)bWidth, Type.VectorKey, _length);
+                if (_cachedKeys == null)
+                {
+                    var keysOffset = _offset - _byteWidth * 3;
+                    var indirectOffset = FlxValue.ComputeIndirectOffset(_buffer, keysOffset, _byteWidth);
+                    var bWidth = FlxValue.ReadLong(_buffer, keysOffset + _byteWidth, _byteWidth);
+                    _cachedKeys = new FlxVector(_buffer, indirectOffset, (byte)bWidth, Type.VectorKey, _length);
+                }
+
+                return _cachedKeys;
             }
         }
 
-        private FlxVector Values => new FlxVector(_buffer, _offset, _byteWidth, Type.Vector, _length);
+        private FlxVector Values
+        {
+            get
+            {
+                if (_cachedValues == null)
+                {
+                    _cachedValues = new FlxVector(_buffer, _offset, _byteWidth, Type.Vector, _length);
+                }
+
+                return _cachedValues;
+            }
+        }
 
         public FlxValue this[string key]
         {
             get
             {
-                var index = KeyIndex(key);
-                if (index < 0)
+                if (!_cache.TryGetValue(key, out FlxValue val))
                 {
-                    throw new Exception($"No key '{key}' could be found");
+                    var index = KeyIndex(key);
+                    if (index < 0)
+                    {
+                        throw new Exception($"No key '{key}' could be found");
+                    }
+
+                    val = Values[index];
+                    _cache[key] = val;
                 }
-                return Values[index];
+
+                return val;
             }
         }
 

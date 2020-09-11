@@ -14,6 +14,7 @@ namespace FlexBuffers
         private readonly int _length;
         private readonly byte _byteWidth;
         private readonly Type _type;
+        private readonly FlxValue[] _cache;
 
         internal FlxVector(byte[] buffer, int offset, byte byteWidth, Type type, int length)
         {
@@ -22,6 +23,7 @@ namespace FlexBuffers
             _byteWidth = byteWidth;
             _type = type;
             _length = length;
+            _cache = new FlxValue[length];
         }
 
         public int Length => _length;
@@ -35,25 +37,36 @@ namespace FlexBuffers
                     throw new Exception($"Bad index {index}, should be 0...{_length}");
                 }
 
+                var cached = _cache[index];
+                if (cached != null)
+                {
+                    return cached;
+                }
+
+                FlxValue val;
                 if (TypesUtil.IsTypedVector(_type))
                 {
                     var elemOffset = _offset + (index * _byteWidth);
-                    return new FlxValue(_buffer, elemOffset, _byteWidth, 1, TypesUtil.TypedVectorElementType(_type));
+                    val = new FlxValue(_buffer, elemOffset, _byteWidth, 1, TypesUtil.TypedVectorElementType(_type));
                 }
-
-                if (TypesUtil.IsFixedTypedVector(_type))
+                else if (TypesUtil.IsFixedTypedVector(_type))
                 {
                     var elemOffset = _offset + (index * _byteWidth);
-                    return new FlxValue(_buffer, elemOffset, _byteWidth, 1, TypesUtil.FixedTypedVectorElementType(_type));
+                    val = new FlxValue(_buffer, elemOffset, _byteWidth, 1, TypesUtil.FixedTypedVectorElementType(_type));
                 }
-
-                if (_type == Type.Vector)
+                else if (_type == Type.Vector)
                 {
                     var packedType = _buffer[_offset + _length * _byteWidth + index];
                     var elemOffset = _offset + (index * _byteWidth);
-                    return new FlxValue(_buffer, elemOffset, _byteWidth, packedType);
+                    val = new FlxValue(_buffer, elemOffset, _byteWidth, packedType);
                 }
-                throw new Exception($"Bad index {index}, should be 0...{_length}");
+                else
+                {
+                    throw new Exception($"Bad index {index}, should be 0...{_length}");
+                }
+
+                _cache[index] = val;
+                return val;
             }
         }
 

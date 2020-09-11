@@ -39,6 +39,7 @@ namespace FlexBuffersCSharpTests
             Assert.AreEqual(4, flx["flags"].AsVector.Length);
             Assert.AreEqual(true, flx["flags"][0].AsBool);
             Assert.AreEqual(false, flx["flags"][1].AsBool);
+            Assert.AreEqual(false, flx["flags"][1].AsBool);
             Assert.AreEqual(true, flx["flags"][2].AsBool);
             Assert.AreEqual(true, flx["flags"][3].AsBool);
 
